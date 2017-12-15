@@ -1,0 +1,8 @@
+<h3>{{query_word}} ({{lang}})</h3>
+{{#each matches}}
+<h5><a href="/doc/{{lang}}/{{doc_id}}">{{doc_id}}</a></h5>
+<p>{{#each words}}
+<a href="{{word}}" class="linked-word {{#if focus}}focus-word{{/if}}">{{word}}</a>
+{{/each}}
+</p>
+{{/each}}

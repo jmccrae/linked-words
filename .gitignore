@@ -1,0 +1,6 @@
+angwiki.*
+ukwiki.*
+enwiki.*
+docs.db
+/target/
+**/*.rs.bk

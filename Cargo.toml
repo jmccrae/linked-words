@@ -1,0 +1,21 @@
+[package]
+name = "linked-words"
+version = "0.1.0"
+authors = ["John P. McCrae <john@mccr.ae>"]
+
+[dependencies]
+fst = "0.2.3"
+fst-regex = "0.1.0"
+rocket = "0.3.3"
+rocket_codegen = "0.3.3"
+quick-error = "1.2.1"
+rand = "0.3.18"
+handlebars = "0.29.1"
+serde = "*"
+serde_json = "*"
+serde_derive = "*"
+rusqlite = "0.13.0"
+regex = "0.2.2"
+flate2 = "0.2"
+clap = "2.29.0"
+stacktrace = "0.2"
