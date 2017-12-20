@@ -8,6 +8,37 @@ use fst::IntoStreamer;
 use fst::Streamer;
 use std::str::from_utf8;
 use flate2::read::GzDecoder;
+use std::collections::HashMap;
+use serde_json;
+
+#[derive(Clone,Debug,Serialize,Deserialize)]
+pub struct Language {
+    pub code : String,
+    pub english : String,
+    pub native : String
+}
+
+pub fn read_languages<P : AsRef<Path>>(json_file : P)
+       -> Result<Vec<Language>, IndexError> {
+    let json_file = File::open(json_file)?;
+    let languages = serde_json::from_reader(json_file)?;
+    Ok(languages)
+}
+
+pub fn open_all(languages : &Vec<Language>) 
+        -> Result<HashMap<String, Vec<Map>>, IndexError> {
+    let mut result = HashMap::new();
+    for lang in languages {
+        let path2 = format!("{}wiki.fst", lang.code);
+        let path = Path::new(&path2);
+        if path.exists() {
+            result.insert(lang.code.clone(), vec![open_index(&path)?]);
+        } else {
+            eprintln!("No data for {} ({})", lang.english, lang.code);
+        }
+    }
+    Ok(result)
+}
 
 pub fn load_file<P : AsRef<Path>>(file_name : P, index : P) -> Result<(), IndexError> {
     let input = BufReader::new(GzDecoder::new(File::open(file_name)?)?);
@@ -107,6 +138,11 @@ quick_error! {
         Num(err: ::std::num::ParseIntError) {
             from()
             display("Numeric error: {}", err)
+            cause(err)
+        }
+        Json(err: serde_json::Error) {
+            from()
+            display("Json error: {}", err)
             cause(err)
         }
     }

@@ -4,3 +4,4 @@ enwiki.*
 docs.db
 /target/
 **/*.rs.bk
+*.swp

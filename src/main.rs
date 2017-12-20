@@ -34,7 +34,8 @@ use clap::{App, Arg, SubCommand};
 struct WLLState {
     by_lang : HashMap<String,Vec<Map>>,
     hbars : Handlebars,
-    docs : DocIndex
+    docs : DocIndex,
+    lang_selects : String
 }
 
 #[derive(Clone,Debug,Serialize)]
@@ -211,11 +212,33 @@ fn get_resource<'r>(resource : String) -> Result<Response<'r>, String> {
 #[derive(Serialize)]
 struct NoData;
 
+fn make_lang_selects(languages : &Vec<index::Language>,
+                     corpora : &HashMap<String, Vec<Map>>) -> String {
+    let mut selects = String::new();
+    for code in corpora.keys() {
+        match languages.iter().find(|x| x.code == *code) {
+            Some(l) => {
+                selects.push_str(&format!("<option value=\"{}\">{} ({})</option>\n",
+                                          l.code, l.english, l.native));
+            },
+            None => {}
+        }
+    }
+    selects
+}
+
+#[derive(Clone,Debug,Serialize)]
+struct IndexPage {
+    langs: String
+}
+
 #[get("/")]
 fn index<'r>(state : State<WLLState>) -> Result<Response<'r>, String> {
     let page = state.hbars.render("page", &Page {
         title: "Linked Words".to_string(),
-        body: state.hbars.render("index", &NoData).unwrap(),
+        body: state.hbars.render("index", &IndexPage {
+            langs: state.lang_selects.clone()
+        }).unwrap(),
         scripts: state.hbars.render("index-scripts", &NoData).unwrap()
     }).map_err(|e| format!("Could not apply Handlebars: {}", e))?;
     Ok(Response::build()
@@ -265,9 +288,10 @@ fn main() {
                 .unwrap();
         }
     } else {
-        let mut corpora = HashMap::new();
-        corpora.insert("ang".to_owned(), vec![index::open_index("angwiki.fst").unwrap()]);
-        corpora.insert("uk".to_owned(), vec![index::open_index("ukwiki.fst").unwrap()]);
+        let languages = index::read_languages("languages.json")
+            .expect("Could not read languages");
+        let corpora = index::open_all(&languages)
+            .expect("Could not load corpus");
 
         let doc_index = DocIndex::new("docs.db").unwrap();
 
@@ -287,10 +311,13 @@ fn main() {
                                        include_str!("docs.hbs"))
             .expect("Could not load docs.hbs");
 
+        let lang_selects = make_lang_selects(&languages, &corpora);
+
         let state = WLLState {
             by_lang: corpora,
             hbars: hbars,
-            docs: doc_index
+            docs: doc_index,
+            lang_selects: lang_selects
         };
         rocket::ignite()
             .manage(state)
